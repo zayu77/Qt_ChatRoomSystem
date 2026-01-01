@@ -109,7 +109,7 @@ QPushButton#btnReturn:hover{
            <string/>
           </property>
           <property name="pixmap">
-           <pixmap resource="../../ChatSystem/imgs.qrc">:/images/images/kita2.jpg</pixmap>
+           <pixmap resource="imgs.qrc">:/img/kita2.jpg</pixmap>
           </property>
           <property name="scaledContents">
            <bool>false</bool>
@@ -249,7 +249,7 @@ QPushButton#btnReturn:hover{
   </layout>
  </widget>
  <resources>
-  <include location="../../ChatSystem/imgs.qrc"/>
+  <include location="imgs.qrc"/>
  </resources>
  <connections/>
 </ui>

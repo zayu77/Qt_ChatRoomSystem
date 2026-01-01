@@ -13,20 +13,26 @@ SOURCES += \
     loginview.cpp \
     main.cpp \
     mainwindow.cpp \
+    masterview.cpp \
     registerview.cpp
 
 HEADERS += \
     idatabase.h \
     loginview.h \
     mainwindow.h \
+    masterview.h \
     registerview.h
 
 FORMS += \
     loginview.ui \
     mainwindow.ui \
+    masterview.ui \
     registerview.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+RESOURCES += \
+    imgs.qrc
