@@ -20,6 +20,8 @@ private slots:
 
     void on_btnLogin_clicked();
 
+    void jumpToChatRoom(const QString &username);
+
 signals:
     void goRegisterView();
 

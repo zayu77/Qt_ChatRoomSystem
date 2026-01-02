@@ -18,13 +18,13 @@ RegisterView::~RegisterView()
     delete ui;
 }
 
-void RegisterView::on_btnReturn_clicked()
+void RegisterView::on_btnReturn_clicked()//返回登录页面
 {
     emit goLoginView();
 }
 
 
-void RegisterView::on_btnRegister_clicked()
+void RegisterView::on_btnRegister_clicked()//点击注册按钮
 {
     QString account = ui->accountEdit->text().trimmed();
     QString password = ui->passwordEdit->text();

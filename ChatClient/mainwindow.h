@@ -14,7 +14,7 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    MainWindow(QWidget *parent = nullptr);
+    explicit MainWindow(const QString &username, QWidget *parent = nullptr);//登录的时候顺便把登录的用户名带过来
     ~MainWindow();
 
 private:
