@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <chatserver.h>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -20,7 +21,14 @@ public:
 private slots:
     void on_btn_Close_clicked();
 
+    void on_startStopButton_clicked();
+
+public slots:
+    void logMessage(const QString &msg);
+
 private:
     Ui::MainWindow *ui;
+
+    ChatServer * m_chatServer;//控制服务器的小工具
 };
 #endif // MAINWINDOW_H
