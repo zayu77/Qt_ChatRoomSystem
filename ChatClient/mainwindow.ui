@@ -14,8 +14,15 @@
    <string>MainWindow</string>
   </property>
   <property name="styleSheet">
-   <string notr="true">/* 标题栏背景 */
-#titleWidget {
+   <string notr="true">/* 主窗口 */
+QMainWindow{
+    background-color: #f5f5f5;  /* QQ风格的浅灰色背景 */
+    font-family: &quot;Microsoft YaHei&quot;, &quot;Segoe UI&quot;, sans-serif;
+    font-size: 12px;
+}
+
+/* 标题栏背景 */
+#widget_Title {
     background-color: #0084ff;  /* QQ蓝色 */
     border-radius: 0px;
     padding: 8px 12px;
@@ -24,7 +31,7 @@
 
 /* 应用标题 */
 #labelTitle {
-    color: black;
+    color: white;
     font-size: 16px;
     font-weight: bold;
     padding-left: 5px;
@@ -34,7 +41,7 @@
 /* 退出登录按钮 */
 #btnLogout {
     background-color: transparent;
-    color: black;
+    color: white;
     border: none;
     border-radius: 4px;
     padding: 6px 12px;
@@ -43,11 +50,141 @@
 }
 
 #btnLogout:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: rgb(255, 0, 0);
 }
 
-#btnLogout:pressed {
-    background-color: rgba(255, 255, 255, 0.2);
+/* 聊天显示区域 */
+QPlainTextEdit,QListWidget,QTreeView {
+    background-color: #f5f5f5;
+    padding: 5px;
+    selection-background-color: #e0f0ff;
+    selection-color: black;
+}
+
+QTextEdit#Edit_communicate{
+	background-color: #f5f5f5;
+    border: 1px solid #dcdcdc;
+	border-radius: 5px;
+    padding: 5px;
+    selection-background-color: #e0f0ff;
+    selection-color: black;
+}
+
+QTextEdit#Edit_communicate_2{
+	background-color: #f5f5f5;
+    border: 1px solid #dcdcdc;
+	border-radius: 5px;
+    padding: 5px;
+    selection-background-color: #e0f0ff;
+    selection-color: black;
+}
+
+QListWidget#listWidget_users{
+	border:none;
+}
+
+QTreeView#treeView_Friend{
+	border:none;
+}
+
+/* 聊天输入框 */
+QTextEdit#say_textEdit {
+    background-color: #f5f5f5;
+    font-size: 13px;
+	border:none;
+}
+
+QTextEdit#say_textEdit_2 {
+    background-color: #f5f5f5;
+    font-size: 13px;
+	border:none;
+}
+
+#widget_right{
+	border: 1px solid #dcdcdc;
+	border-radius: 5px;
+	background-color: #f5f5f5; 
+}
+
+#widget_right_2{
+	border: 1px solid #dcdcdc;
+	border-radius: 5px;
+	background-color: #f5f5f5; 
+}
+
+/* 列表标题 */
+QLabel#label_member {
+    color: #333333;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+QLabel#label_member_2 {
+    color: #333333;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+QLabel#label_Notice {
+    color: #333333;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+QLabel#label_Notice_2 {
+    color: #333333;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+/* 通知区域 */
+QPlainTextEdit#plainEdit_Notice {
+    background-color: #f5f5f5; 
+    border: none;
+}
+
+QPlainTextEdit#plainEdit_Notice_2 {
+    background-color: #f5f5f5; 
+    border: none;
+}
+
+/* 发送按钮 */
+#btnSay {
+    background-color: #0084ff;  /* QQ蓝色 */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    min-width: 80px;
+    min-height: 32px;
+}
+
+#btnSay:hover {
+    background-color: #0073e6;
+}
+
+#btnSay:pressed {
+    background-color: #005bbf;
+}
+
+#btnSay_2 {
+    background-color: #0084ff;  /* QQ蓝色 */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    min-width: 80px;
+    min-height: 32px;
+}
+
+#btnSay_2:hover {
+    background-color: #0073e6;
+}
+
+#btnSay_2:pressed {
+    background-color: #005bbf;
 }</string>
   </property>
   <widget class="QWidget" name="widget">
@@ -61,6 +198,21 @@
        </size>
       </property>
       <layout class="QHBoxLayout" name="horizontalLayout">
+       <property name="spacing">
+        <number>0</number>
+       </property>
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
        <item>
         <widget class="QLabel" name="labelTitle">
          <property name="font">
@@ -106,6 +258,9 @@
        <layout class="QGridLayout" name="gridLayout_4">
         <item row="0" column="0">
          <layout class="QVBoxLayout" name="verticalLayout">
+          <property name="spacing">
+           <number>5</number>
+          </property>
           <item>
            <widget class="QTextEdit" name="Edit_communicate">
             <property name="minimumSize">
@@ -119,6 +274,18 @@
           <item>
            <widget class="QWidget" name="widget_bottom" native="true">
             <layout class="QGridLayout" name="gridLayout_3">
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
              <item row="0" column="0">
               <widget class="QTextEdit" name="say_textEdit">
                <property name="minimumSize">
@@ -161,8 +328,26 @@
         <item row="0" column="1">
          <widget class="QWidget" name="widget_right" native="true">
           <layout class="QGridLayout" name="gridLayout_2">
+           <property name="leftMargin">
+            <number>5</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>5</number>
+           </property>
+           <property name="bottomMargin">
+            <number>3</number>
+           </property>
+           <property name="spacing">
+            <number>0</number>
+           </property>
            <item row="0" column="0">
             <layout class="QHBoxLayout" name="horizontalLayout_2">
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
              <item>
               <widget class="QLabel" name="label_member">
                <property name="text">
@@ -197,6 +382,9 @@
            </item>
            <item row="2" column="0">
             <layout class="QHBoxLayout" name="horizontalLayout_3">
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
              <item>
               <widget class="QLabel" name="label_Notice">
                <property name="text">
@@ -238,6 +426,9 @@
        <layout class="QGridLayout" name="gridLayout_7">
         <item row="0" column="0">
          <layout class="QVBoxLayout" name="verticalLayout_2">
+          <property name="spacing">
+           <number>5</number>
+          </property>
           <item>
            <widget class="QTextEdit" name="Edit_communicate_2">
             <property name="minimumSize">
@@ -251,6 +442,18 @@
           <item>
            <widget class="QWidget" name="widget_bottom_2" native="true">
             <layout class="QGridLayout" name="gridLayout_5">
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
              <item row="0" column="0">
               <widget class="QTextEdit" name="say_textEdit_2">
                <property name="minimumSize">
@@ -293,8 +496,26 @@
         <item row="0" column="1">
          <widget class="QWidget" name="widget_right_2" native="true">
           <layout class="QGridLayout" name="gridLayout_6">
+           <property name="leftMargin">
+            <number>5</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>5</number>
+           </property>
+           <property name="bottomMargin">
+            <number>3</number>
+           </property>
+           <property name="spacing">
+            <number>0</number>
+           </property>
            <item row="2" column="0">
             <layout class="QHBoxLayout" name="horizontalLayout_7">
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
              <item>
               <widget class="QLabel" name="label_Notice_2">
                <property name="text">
@@ -319,6 +540,9 @@
            </item>
            <item row="0" column="0">
             <layout class="QHBoxLayout" name="horizontalLayout_6">
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
              <item>
               <widget class="QLabel" name="label_member_2">
                <property name="text">
