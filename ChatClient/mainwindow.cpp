@@ -1,5 +1,8 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include <QJsonValue>
+#include <QJsonObject>
+#include <QMessageBox>
 
 MainWindow::MainWindow(const QString &username,QWidget *parent)
     : QMainWindow(parent)
@@ -12,8 +15,8 @@ MainWindow::MainWindow(const QString &username,QWidget *parent)
     m_chatClient->connectToServer(QHostAddress("127.0.0.1"),1967);//我已经登录进来了直接连上就好了
 
     connect(m_chatClient,&ChatClient::connected,this,&MainWindow::connectedToServer);
-    connect(m_chatClient,&ChatClient::messageReceived,this,&MainWindow::messageReceived);
-    //connect(m_chatClient,&ChatClient::jsonReceived,this,&MainWindow::jsonReceived);
+    //connect(m_chatClient,&ChatClient::messageReceived,this,&MainWindow::messageReceived);
+    connect(m_chatClient,&ChatClient::jsonReceived,this,&MainWindow::jsonReceived);
 }
 
 MainWindow::~MainWindow()
@@ -26,9 +29,33 @@ void MainWindow::connectedToServer()
     m_chatClient->sendMessage(m_userName,"login");
 }
 
-void MainWindow::messageReceived(const QString &text)
+void MainWindow::messageReceived(const QString &sender,const QString &text)
 {
-    ui->Edit_communicate->append(text);
+    ui->Edit_communicate->append(QString("%1 : %2").arg(sender).arg(text));
+}
+
+void MainWindow::jsonReceived(const QJsonObject &docObj)
+{
+    const QJsonValue typeVal= docObj.value("type");
+    if(typeVal.isNull()||!typeVal.isString()) return ;
+    if(typeVal.toString().compare("message",Qt::CaseInsensitive)==0){
+        const QJsonValue textVal =docObj.value("text");
+        const QJsonValue senderVal =docObj.value("sender");
+        if(textVal.isNull()||!textVal.isString()) return ;
+        if(senderVal.isNull()||!senderVal.isString()) return ;
+
+        messageReceived(senderVal.toString(),textVal.toString());
+    }
+    else if(typeVal.toString().compare("newuser",Qt::CaseInsensitive)==0){
+        const QJsonValue userNameVal =docObj.value("username");
+        if(userNameVal.isNull()||!userNameVal.isString()) return ;
+        userJoined(userNameVal.toString());//新用户就把他加到用户列表中
+    }
+}
+
+void MainWindow::userJoined(const QString &user)
+{
+    ui->listWidget_users->addItem(user);
 }
 
 
@@ -44,6 +71,7 @@ void MainWindow::on_btnSay_clicked()//点击发送消息
 
 void MainWindow::on_btnLogout_clicked()
 {
-    this->close();
+    m_chatClient->disconnectFromHost();//退出登录应该断开连接
+    this->close();//应该需要关闭聊天室界面回到登录页面
 }
 
