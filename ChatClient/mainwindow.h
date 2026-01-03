@@ -21,7 +21,7 @@ public:
 
 private slots:
     void connectedToServer();
-    void messageReceived(const QString &sender,const QString &text);
+    void messageReceived(const QString &text);
 
     void on_btnSay_clicked();
 

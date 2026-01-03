@@ -12,7 +12,7 @@ MainWindow::MainWindow(const QString &username,QWidget *parent)
     m_chatClient->connectToServer(QHostAddress("127.0.0.1"),1967);//我已经登录进来了直接连上就好了
 
     connect(m_chatClient,&ChatClient::connected,this,&MainWindow::connectedToServer);
-    //connect(m_chatClient,&ChatClient::messageReceived,this,&MainWindow::messageReceived);
+    connect(m_chatClient,&ChatClient::messageReceived,this,&MainWindow::messageReceived);
     //connect(m_chatClient,&ChatClient::jsonReceived,this,&MainWindow::jsonReceived);
 }
 
@@ -26,9 +26,9 @@ void MainWindow::connectedToServer()
     m_chatClient->sendMessage(m_userName,"login");
 }
 
-void MainWindow::messageReceived(const QString &sender, const QString &text)
+void MainWindow::messageReceived(const QString &text)
 {
-    ui->say_textEdit->append(QString("%1 : %2").arg(sender).arg(text));
+    ui->Edit_communicate->append(text);
 }
 
 
