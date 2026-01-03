@@ -97,7 +97,7 @@ void ChatServer::jsonReceived(ServerWorker *sender, const QJsonObject &docObj)
         // 处理私聊消息
         const QJsonValue textVal = docObj.value("text");
         const QJsonValue receiverVal = docObj.value("receiver");
-        const QJsonValue senderVal = docObj.value("sender");
+        //const QJsonValue senderVal = docObj.value("sender");
         if(textVal.isNull() || !textVal.isString()) return;
         if(receiverVal.isNull() || !receiverVal.isString()) return;
         QString text = textVal.toString().trimmed();

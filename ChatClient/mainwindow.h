@@ -5,6 +5,7 @@
 #include <QListWidget>
 #include "chatclient.h"
 #include <masterview.h>
+#include "privatechat.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -27,7 +28,10 @@ private slots:
     void userJoined(const QString &user);
     void userLeft(const QString &user);
     void userListReceived(const QStringList &list);
-    void displayPrivateMessage(const QString &sender, const QString &text,const QString &timestamp, bool isSentByMe);
+
+    // 新增槽函数
+    void onPrivateChatWindowClosed(const QString &targetUser);
+    void openPrivateChat(const QString &targetUser);
 
     void on_btnSay_clicked();
 
@@ -38,6 +42,8 @@ private slots:
 private:
     Ui::MainWindow *ui;
 
+    // 新增：管理私聊窗口
+    QMap<QString, PrivateChat*> m_privateChatWindows;
     ChatClient *m_chatClient;
     QString m_userName;
 };

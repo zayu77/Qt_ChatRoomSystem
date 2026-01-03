@@ -23,7 +23,7 @@ void ChatClient::sendPrivateMessage(const QString &receiver, const QString &text
     message["type"] = "private";
     message["receiver"] = receiver;
     message["text"] = text;
-    message["sender"] = m_userName;  // 需要先保存用户名
+    //message["sender"] = m_userName;  // 需要先保存用户名
     serverStream << QJsonDocument(message).toJson();
 }
 

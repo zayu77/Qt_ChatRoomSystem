@@ -15,6 +15,7 @@ SOURCES += \
     main.cpp \
     mainwindow.cpp \
     masterview.cpp \
+    privatechat.cpp \
     registerview.cpp
 
 HEADERS += \
@@ -23,12 +24,14 @@ HEADERS += \
     loginview.h \
     mainwindow.h \
     masterview.h \
+    privatechat.h \
     registerview.h
 
 FORMS += \
     loginview.ui \
     mainwindow.ui \
     masterview.ui \
+    privatechat.ui \
     registerview.ui
 
 # Default rules for deployment.

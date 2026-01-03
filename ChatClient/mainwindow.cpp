@@ -16,6 +16,8 @@ MainWindow::MainWindow(const QString &username,QWidget *parent)
 
     connect(m_chatClient,&ChatClient::connected,this,&MainWindow::connectedToServer);
     connect(m_chatClient,&ChatClient::jsonReceived,this,&MainWindow::jsonReceived);
+    // 连接用户列表双击信号
+    connect(ui->listWidget_users, &QListWidget::itemDoubleClicked,this, &MainWindow::on_listWidget_users_itemDoubleClicked);
 }
 
 MainWindow::~MainWindow()
@@ -26,6 +28,7 @@ MainWindow::~MainWindow()
 void MainWindow::connectedToServer()
 {
     m_chatClient->sendMessage(m_userName,"login");
+    m_chatClient->setUserName(m_userName); //设置客户端用户名
 }
 
 void MainWindow::messageReceived(const QString &sender,const QString &text)
@@ -78,16 +81,31 @@ void MainWindow::jsonReceived(const QJsonObject &docObj)
         QString receiver = receiverVal.toString();
         QString timestamp = timestampVal.isString() ? timestampVal.toString() : "";
 
-        // 判断是否是当前用户发送的私聊
-        bool isSentByMe = (sender == m_chatClient->userName());
+        // 判断是否是发给我的私聊
+        bool isForMe = (receiver == m_userName);
+        bool isFromMe = (sender == m_userName);
 
-        // 显示私聊消息
-        if(isSentByMe){
-            // 这是我发送的消息，sender参数应该是接收者
-            displayPrivateMessage(receiver, text, timestamp, true);
-        } else {
-            // 这是我收到的消息，sender参数应该是发送者
-            displayPrivateMessage(sender, text, timestamp, false);
+        if (isForMe || isFromMe) {
+            // 确定私聊对象
+            QString targetUser = isFromMe ? receiver : sender;
+
+            // 如果对应的私聊窗口已打开，显示消息
+            if (m_privateChatWindows.contains(targetUser)) {
+                PrivateChat *window = m_privateChatWindows.value(targetUser);//从映射（Map）中根据用户名获取对应的私聊窗口对象
+                window->displayPrivateMessage(sender, text, timestamp);
+            } else {
+                // 如果窗口未打开，先打开窗口再显示消息
+                openPrivateChat(targetUser);
+                if (m_privateChatWindows.contains(targetUser)) {
+                    PrivateChat *window = m_privateChatWindows.value(targetUser);
+                    window->displayPrivateMessage(sender, text, timestamp);
+                }
+            }
+            // 在主窗口也显示简要提示
+            if (isForMe) {
+                QString notification = QString("%1 给你发来私聊消息").arg(sender);
+                //ui->statusBar->showMessage(notification, 3000);//等会换到通知框
+            }
         }
     }
     else if(typeVal.toString().compare("private_error", Qt::CaseInsensitive) == 0){//发送的用户不在线就会出现私聊错误
@@ -139,19 +157,35 @@ void MainWindow::userListReceived(const QStringList &list)//给每个客户端�
     }
 }
 
-void MainWindow::displayPrivateMessage(const QString &sender, const QString &text, const QString &timestamp, bool isSentByMe)//展示私聊信息，只会发给对的人
+void MainWindow::onPrivateChatWindowClosed(const QString &targetUser)//当用户关闭私聊窗口时，从管理器中清除对应记录
 {
-    QString timeStr = timestamp.isEmpty() ? QDateTime::currentDateTime().toString("hh:mm:ss") : timestamp;
-    QString formattedMsg;
-    if(isSentByMe){
-        // 我发送的私聊消息
-        // 注意：这里的 sender 参数实际上是接收者的名字
-        formattedMsg = QString("[%1] 你对 %2 说(私聊): %3").arg(timeStr).arg(sender).arg(text);
-    } else {
-        // 接收到的私聊消息
-        formattedMsg = QString("[%1] %2 对你说(私聊): %3").arg(timeStr).arg(sender).arg(text);
+    if (m_privateChatWindows.contains(targetUser)) {
+        m_privateChatWindows.remove(targetUser);
     }
-    ui->Edit_communicate->append(formattedMsg);
+}
+
+void MainWindow::openPrivateChat(const QString &targetUser)//打开私聊窗口
+{
+    // 检查是否已打开与这个用户的私聊窗口
+    if (m_privateChatWindows.contains(targetUser)) {
+        // 如果已打开，激活窗口
+        PrivateChat *window = m_privateChatWindows.value(targetUser);
+        window->raise();//将窗口提升到最顶层
+        window->activateWindow();//激活窗口，使其获得焦点
+        return;
+    }
+
+    // 创建新的私聊窗口
+    PrivateChat *privateWindow = new PrivateChat(targetUser, m_userName, m_chatClient, nullptr);
+
+    // 连接关闭信号
+    connect(privateWindow, &PrivateChat::windowClosed,this, &MainWindow::onPrivateChatWindowClosed);
+
+    // 保存到映射中
+    m_privateChatWindows.insert(targetUser, privateWindow);//就是保存到map中
+
+    // 显示窗口
+    privateWindow->show();
 }
 
 
@@ -159,21 +193,7 @@ void MainWindow::on_btnSay_clicked()//点击发送消息
 {
     QString text = ui->say_textEdit->toPlainText().trimmed();
     if(text.isEmpty()) return;
-    // 检查是否是私聊消息（格式: @用户名 消息内容）
-    if(text.startsWith("@")){
-        int spaceIndex = text.indexOf(" ");
-        if(spaceIndex > 1){  // 有用户名和消息内容
-            QString receiver = text.mid(1, spaceIndex - 1).trimmed();
-            QString message = text.mid(spaceIndex + 1).trimmed();
-            if(!receiver.isEmpty() && !message.isEmpty()){
-                m_chatClient->sendPrivateMessage(receiver, message);
-                // 立即在本地显示
-                displayPrivateMessage(receiver, message, "", true);
-                ui->say_textEdit->clear();
-                return;
-            }
-        }
-    }
+
     // 普通群聊消息
     m_chatClient->sendMessage(text);
     ui->say_textEdit->clear();//发完清空才是正确的
@@ -199,9 +219,8 @@ void MainWindow::on_listWidget_users_itemDoubleClicked(QListWidgetItem *item)//�
     if(userName.endsWith("*")){
         return;
     }
-    // 在输入框添加私聊前缀
-    ui->say_textEdit->setText("@" + userName + " ");
-    ui->say_textEdit->setFocus();
+    // 打开私聊聊天框
+    openPrivateChat(userName);
 }
 
 
