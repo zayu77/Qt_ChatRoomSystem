@@ -63,6 +63,9 @@ void LoginView::jumpToChatRoom(const QString &username)//切换到聊天室
     MainWindow *chatWindow = new MainWindow(username);
     chatWindow->show();
 
+    // 发射信号
+    emit loginSuccessAndJump();
+
     //关闭登录窗口
     this->close();
 }

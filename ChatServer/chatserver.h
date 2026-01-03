@@ -17,6 +17,9 @@ protected:
 
     void broadcast(const QJsonObject &message,ServerWorker *exclude);
 
+private:
+    void sendPrivateMessage(const QJsonObject &message, ServerWorker *sender);
+
 signals:
     void logMessage(const QString &msg);
 

@@ -9,6 +9,7 @@ MasterView::MasterView(QWidget *parent)
 
     setWindowFlag(Qt::FramelessWindowHint);//把原来的窗口界面隐藏
     goLoginView();//初始在登录界面
+    connect(loginView, &LoginView::loginSuccessAndJump, this, &MasterView::close);//父界面就别出来了
 }
 
 MasterView::~MasterView()
@@ -20,7 +21,6 @@ void MasterView::goLoginView()
 {
     loginView = new LoginView(this);
     pushWidgetToStackView(loginView);
-    connect(loginView,SIGNAL(loginSuccess()),this,SLOT(goWelcomeView()));
     connect(loginView,SIGNAL(goRegisterView()),this,SLOT(goRegisterView()));//转到注册页面
 }
 
@@ -36,7 +36,6 @@ void MasterView::pushWidgetToStackView(QWidget *widget)
     ui->stackedWidget->addWidget(widget);
     int count=ui->stackedWidget->count();
     ui->stackedWidget->setCurrentIndex(count-1);
-    //ui->label_Title->setText(widget->windowTitle());//界面的名字
 }
 
 void MasterView::on_btnClose_clicked()

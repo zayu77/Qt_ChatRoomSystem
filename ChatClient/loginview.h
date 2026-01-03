@@ -24,6 +24,7 @@ private slots:
 
 signals:
     void goRegisterView();
+    void loginSuccessAndJump();
 
 private:
     Ui::LoginView *ui;

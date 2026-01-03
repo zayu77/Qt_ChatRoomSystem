@@ -11,7 +11,11 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>ChatRoom</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="imgs.qrc">
+    <normaloff>:/img/about.png</normaloff>:/img/about.png</iconset>
   </property>
   <property name="styleSheet">
    <string notr="true">/* 主窗口 */
@@ -26,7 +30,6 @@ QMainWindow{
     background-color: #0084ff;  /* QQ蓝色 */
     border-radius: 0px;
     padding: 8px 12px;
-    qproperty-alignment: 'AlignLeft | AlignVCenter';
 }
 
 /* 应用标题 */
@@ -35,7 +38,6 @@ QMainWindow{
     font-size: 16px;
     font-weight: bold;
     padding-left: 5px;
-    qproperty-alignment: 'AlignLeft | AlignVCenter';
 }
 
 /* 退出登录按钮 */
@@ -252,7 +254,7 @@ QPlainTextEdit#plainEdit_Notice_2 {
     <item row="1" column="0">
      <widget class="QStackedWidget" name="stackedWidget">
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="page">
        <layout class="QGridLayout" name="gridLayout_4">
@@ -588,6 +590,8 @@ QPlainTextEdit#plainEdit_Notice_2 {
    </layout>
   </widget>
  </widget>
- <resources/>
+ <resources>
+  <include location="imgs.qrc"/>
+ </resources>
  <connections/>
 </ui>

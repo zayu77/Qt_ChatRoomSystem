@@ -35,8 +35,6 @@ void ServerWorker::onReadyRead()//当客户端有数据可读时自动触发，�
         socketStream.startTransaction(); // 开始事务，可以回滚
         socketStream>>jsonData;
         if(socketStream.commitTransaction()){ // 如果成功读取完整数据包
-            //emit logMessage(QString::fromUtf8(jsonData));
-            //sendMessage("I recieved message");
             QJsonParseError parseError;
             const QJsonDocument jsonDoc = QJsonDocument::fromJson(jsonData,&parseError);// 将字节数组解析为JSON文档
             if(parseError.error == QJsonParseError::NoError){
