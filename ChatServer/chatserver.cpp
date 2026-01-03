@@ -18,7 +18,7 @@ void ChatServer::incomingConnection(qintptr socketDescriptor)//这个有新客�
     }
     connect(worker,&ServerWorker::logMessage,this,&ChatServer::logMessage);//这个logMessage的传递由ServerWorker传到ChatServer再到mainwindow
     connect(worker,&ServerWorker::jsonReceived,this,&ChatServer::jsonReceived);//接收到ServerWorker发出的信号然后调用ChatServer的方法
-    // connect(worker,&ServerWorker::disconnectedFromClient,this,std::bind(&ChatServer::userDisconnected,this,worker));
+    connect(worker,&ServerWorker::disconnectedFromClient,this,std::bind(&ChatServer::userDisconnected,this,worker));
     m_clients.append(worker);//成功了就添加进来
     emit logMessage("新的用户连接上了");
 }
@@ -58,5 +58,30 @@ void ChatServer::jsonReceived(ServerWorker *sender, const QJsonObject &docObj)
         connectedMessage["type"] = "newuser";
         connectedMessage["username"] = userNameVal.toString();
         broadcast(connectedMessage,sender);
+
+        //还得把用户列表告诉新登进来的用户
+        QJsonObject userListMessage;
+        userListMessage["type"] = "userlist";
+        QJsonArray userlist;
+        for(ServerWorker *worker : m_clients){
+            if(worker == sender) userlist.append(worker->userName()+ "*");
+            else userlist.append(worker->userName());
+        }
+        userListMessage["userlist"] = userlist;
+        sender->sendJson(userListMessage);
     }
+}
+
+void ChatServer::userDisconnected(ServerWorker *sender)
+{
+    m_clients.removeAll(sender);//移除数组中的这个客户端
+    const QString userName = sender->userName();
+    if(!userName.isEmpty()){
+        QJsonObject disconnectedMessage;
+        disconnectedMessage["type"]= "userdisconnected";
+        disconnectedMessage["username"]= userName;
+        broadcast(disconnectedMessage,nullptr);
+        emit logMessage(userName + "disconnected");
+    }
+    sender->deleteLater();//真正删除掉
 }

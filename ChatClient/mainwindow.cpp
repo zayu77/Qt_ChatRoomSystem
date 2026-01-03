@@ -51,11 +51,37 @@ void MainWindow::jsonReceived(const QJsonObject &docObj)
         if(userNameVal.isNull()||!userNameVal.isString()) return ;
         userJoined(userNameVal.toString());//新用户就把他加到用户列表中
     }
+    //处理其它客户端收到其它用户下线的逻辑
+    else if(typeVal.toString().compare("userdisconnected",Qt::CaseInsensitive)==0){
+        const QJsonValue userNameVal =docObj.value("username");
+        if(userNameVal.isNull()||!userNameVal.isString()) return ;
+        userLeft(userNameVal.toString());//在用户列表中移除掉下线的用户
+    }
+    //处理新登录进来的用户没有以前用户列表信息的逻辑
+    else if(typeVal.toString().compare("userlist",Qt::CaseInsensitive)==0){
+        const QJsonValue userlistVal =docObj.value("userlist");
+        if(userlistVal.isNull()||!userlistVal.isArray()) return ;
+        userListReceived(userlistVal.toVariant().toStringList());
+    }
 }
 
 void MainWindow::userJoined(const QString &user)
 {
     ui->listWidget_users->addItem(user);
+}
+
+void MainWindow::userLeft(const QString &user)//用户退出登录时处理的逻辑
+{
+    for(auto aItem: ui->listWidget_users->findItems(user,Qt::MatchExactly)){//退出登录后把用户删除
+        ui->listWidget_users->removeItemWidget(aItem);
+        delete aItem;
+    }
+}
+
+void MainWindow::userListReceived(const QStringList &list)//给每个客户端的用户列表进行初始化
+{
+    ui->listWidget_users->clear();
+    ui->listWidget_users->addItems(list);
 }
 
 
