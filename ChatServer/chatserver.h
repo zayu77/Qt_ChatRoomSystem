@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QTcpServer>
 #include "serverworker.h"
+#include "idatabase.h"
 
 class ChatServer : public QTcpServer
 {
@@ -16,9 +17,14 @@ protected:
     QVector<ServerWorker*>m_clients;
 
     void broadcast(const QJsonObject &message,ServerWorker *exclude);
+    void sendFriendList(ServerWorker *client, const QString &username);//发送好友列表
+    // 通知好友状态变化
+    void notifyFriendsStatusChange(const QString &username, int status);
+    ServerWorker* findWorkerByUsername(const QString &username);
 
 private:
     void sendPrivateMessage(const QJsonObject &message, ServerWorker *sender);
+    QMap<QString, QMap<QString, QJsonObject>> m_pendingRequests;  // 待处理的好友请求
 
 signals:
     void logMessage(const QString &msg);

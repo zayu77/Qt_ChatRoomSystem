@@ -34,6 +34,14 @@ private slots:
     // 新增槽函数
     void onPrivateChatWindowClosed(const QString &targetUser);
     void openPrivateChat(const QString &targetUser);
+    void handleFriendRequest(const QJsonObject &docObj);
+    void handleFriendAdded(const QJsonObject &docObj);
+    void requestFriendList();
+    void handleFriendError(const QJsonObject &docObj);
+    void handleFriendList(const QJsonObject &docObj);
+    void updateFriendTree(const QJsonArray &friends);
+    void handleFriendStatus(const QJsonObject &docObj);
+    void updateFriendStatusInTree(const QString &username, int status);
 
     void on_btnSay_clicked();
 

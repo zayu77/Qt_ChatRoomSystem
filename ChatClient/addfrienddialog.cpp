@@ -13,6 +13,14 @@ AddFriendDialog::AddFriendDialog(QWidget *parent)
     setWindowTitle("添加好友");
     setFixedSize(300, 200);
 
+    ui->GroupcomboBox->clear();
+    ui->GroupcomboBox->addItem("我的好友", 1);
+    ui->GroupcomboBox->addItem("同学", 2);
+    ui->GroupcomboBox->addItem("家人", 3);
+
+    // 设置默认选中
+    ui->GroupcomboBox->setCurrentIndex(0);
+
     // 连接信号
     connect(ui->btnYes, &QPushButton::clicked, this, &AddFriendDialog::on_btnYes_clicked);
     connect(ui->btnCancel, &QPushButton::clicked, this, &AddFriendDialog::reject);

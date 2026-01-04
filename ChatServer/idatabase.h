@@ -25,6 +25,8 @@ public:
     //bool removeFriendRelationship(int userId, int friendId);
     //bool updateFriendGroup(int userId, int friendId, int newGroupId);
     //bool updateFriendNickname(int userId, int friendId, const QString &nickname);
+    // 检查是否已经是好友
+    bool isFriend(int userId, int friendId);
 
     // 获取好友列表
     QJsonArray getFriendList(int userId);

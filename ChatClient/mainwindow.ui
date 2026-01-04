@@ -441,6 +441,14 @@ QPlainTextEdit#plainEdit_Notice_2 {
              <property name="headerHidden">
               <bool>true</bool>
              </property>
+             <attribute name="headerVisible">
+              <bool>false</bool>
+             </attribute>
+             <column>
+              <property name="text">
+               <string notr="true">1</string>
+              </property>
+             </column>
             </widget>
            </item>
           </layout>
