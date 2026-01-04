@@ -6,6 +6,8 @@
 #include "chatclient.h"
 #include <masterview.h>
 #include "privatechat.h"
+#include "idatabase.h"
+#include "addfrienddialog.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -38,6 +40,8 @@ private slots:
     void on_btnLogout_clicked();
 
     void on_listWidget_users_itemDoubleClicked(QListWidgetItem *item);
+
+    void on_btnAddfriend_clicked();
 
 private:
     Ui::MainWindow *ui;

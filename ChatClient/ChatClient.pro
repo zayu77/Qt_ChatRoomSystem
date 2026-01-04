@@ -9,6 +9,7 @@ CONFIG += c++17
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    addfrienddialog.cpp \
     chatclient.cpp \
     idatabase.cpp \
     loginview.cpp \
@@ -19,6 +20,7 @@ SOURCES += \
     registerview.cpp
 
 HEADERS += \
+    addfrienddialog.h \
     chatclient.h \
     idatabase.h \
     loginview.h \
@@ -28,6 +30,7 @@ HEADERS += \
     registerview.h
 
 FORMS += \
+    addfrienddialog.ui \
     loginview.ui \
     mainwindow.ui \
     masterview.ui \

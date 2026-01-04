@@ -10,6 +10,8 @@ class ChatClient : public QObject
 public:
     explicit ChatClient(QObject *parent = nullptr);
     void sendPrivateMessage(const QString &receiver, const QString &text);
+    // 发送通用 JSON
+    void sendJson(const QJsonObject &json);
     void setUserName(const QString &name) { m_userName = name; }
     QString userName() const { return m_userName; }
 

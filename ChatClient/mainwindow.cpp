@@ -204,6 +204,8 @@ void MainWindow::on_btnLogout_clicked()
 {
     m_chatClient->disconnectFromHost();//退出登录应该断开连接
     this->close();//应该需要关闭聊天室界面回到登录页面
+
+    IDataBase::getInstance().userLogout(m_userName);
     // 创建新的 MasterView
     MasterView *newMasterView = new MasterView();
     newMasterView->show();
@@ -224,4 +226,29 @@ void MainWindow::on_listWidget_users_itemDoubleClicked(QListWidgetItem *item)//�
 }
 
 
+
+void MainWindow::on_btnAddfriend_clicked()//添加好友
+{
+    AddFriendDialog dlg(this);
+    dlg.setCurrentUser(m_userName);
+
+    if (dlg.exec() == QDialog::Accepted) {
+        QString targetUser = dlg.getTargetUsername();
+        QString nickname = dlg.getNickname();
+        int groupId = dlg.getGroupId();
+
+        // 发送好友请求
+        QJsonObject request;
+        request["type"] = "friend_request";
+        request["to"] = targetUser;
+        if (!nickname.isEmpty()) {
+            request["nickname"] = nickname;
+        }
+        request["group_id"] = groupId;
+
+        m_chatClient->sendJson(request);
+
+        QMessageBox::information(this, "已发送",QString("好友请求已发送给 %1").arg(targetUser));
+    }
+}
 

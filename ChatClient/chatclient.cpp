@@ -27,6 +27,22 @@ void ChatClient::sendPrivateMessage(const QString &receiver, const QString &text
     serverStream << QJsonDocument(message).toJson();
 }
 
+void ChatClient::sendJson(const QJsonObject &json)//直接发送json格式的信息
+{
+    if (m_clientSocket->state() != QAbstractSocket::ConnectedState) {
+        qDebug() << "无法发送：未连接到服务器";
+        return;
+    }
+
+    QDataStream serverStream(m_clientSocket);
+    serverStream.setVersion(QDataStream::Qt_6_5);
+
+    QByteArray jsonData = QJsonDocument(json).toJson(QJsonDocument::Compact);
+
+    qDebug() << "发送JSON:" << QString::fromUtf8(jsonData);
+    serverStream << jsonData;
+}
+
 void ChatClient::onReadyRead()// 接收服务器消息
 {
     QByteArray jsonData;
