@@ -40,11 +40,13 @@ QMainWindow{
     padding-left: 5px;
 }
 
-#label_status{
-    color: white;
-    font-size: 16px;
-    font-weight: bold;
-    padding-left: 5px;
+#messageListView{
+	background-color: #f5f5f5;
+    border: 1px solid #dcdcdc;
+	border-radius: 5px;
+    padding: 5px;
+    selection-background-color: #e0f0ff;
+    selection-color: black;
 }
 
 /* 退出登录按钮 */
@@ -253,13 +255,6 @@ QPlainTextEdit#plainEdit_Notice_2 {
         </widget>
        </item>
        <item>
-        <widget class="QLabel" name="label_status">
-         <property name="text">
-          <string>在线</string>
-         </property>
-        </widget>
-       </item>
-       <item>
         <spacer name="horizontalSpacer">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
@@ -302,16 +297,6 @@ QPlainTextEdit#plainEdit_Notice_2 {
            <number>5</number>
           </property>
           <item>
-           <widget class="QTextEdit" name="Edit_communicate">
-            <property name="minimumSize">
-             <size>
-              <width>900</width>
-              <height>450</height>
-             </size>
-            </property>
-           </widget>
-          </item>
-          <item>
            <widget class="QWidget" name="widget_bottom" native="true">
             <layout class="QGridLayout" name="gridLayout_3">
              <property name="leftMargin">
@@ -326,7 +311,7 @@ QPlainTextEdit#plainEdit_Notice_2 {
              <property name="bottomMargin">
               <number>0</number>
              </property>
-             <item row="0" column="0">
+             <item row="1" column="0">
               <widget class="QTextEdit" name="say_textEdit">
                <property name="minimumSize">
                 <size>
@@ -336,7 +321,7 @@ QPlainTextEdit#plainEdit_Notice_2 {
                </property>
               </widget>
              </item>
-             <item row="1" column="0">
+             <item row="2" column="0">
               <layout class="QHBoxLayout" name="horizontalLayout_4">
                <item>
                 <spacer name="horizontalSpacer_2">
@@ -359,6 +344,16 @@ QPlainTextEdit#plainEdit_Notice_2 {
                 </widget>
                </item>
               </layout>
+             </item>
+             <item row="0" column="0">
+              <widget class="QListView" name="messageListView">
+               <property name="minimumSize">
+                <size>
+                 <width>950</width>
+                 <height>450</height>
+                </size>
+               </property>
+              </widget>
              </item>
             </layout>
            </widget>

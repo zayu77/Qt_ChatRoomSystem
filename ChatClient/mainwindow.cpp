@@ -3,14 +3,20 @@
 #include <QJsonValue>
 #include <QJsonObject>
 #include <QMessageBox>
+#include "messagemodel.h"
+#include "messagedelegate.h"
 
 MainWindow::MainWindow(const QString &username,QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
+    , m_userName(username)//保存好用户名
+    , m_mainChatModel(new MessageModel(this))
 {
     ui->setupUi(this);
 
-    m_userName=username;//保存好用户名
+    // 设置主聊天视图
+    setupMainChatView();
+
     m_chatClient = new ChatClient(this);//初始化一个客户端
 
     connect(m_chatClient,&ChatClient::connected,this,&MainWindow::connectedToServer);
@@ -34,7 +40,7 @@ void MainWindow::connectedToServer()
 
 void MainWindow::messageReceived(const QString &sender,const QString &text)
 {
-    ui->Edit_communicate->append(QString("%1 : %2").arg(sender).arg(text));
+    //ui->Edit_communicate->append(QString("%1 : %2").arg(sender).arg(text));
 }
 
 void MainWindow::jsonReceived(const QJsonObject &docObj)
@@ -47,7 +53,18 @@ void MainWindow::jsonReceived(const QJsonObject &docObj)
         if(textVal.isNull()||!textVal.isString()) return ;
         if(senderVal.isNull()||!senderVal.isString()) return ;
 
-        messageReceived(senderVal.toString(),textVal.toString());
+        // ✅ 使用MessageModel添加消息
+        ChatMessage message;
+        message.id = QUuid::createUuid().toString();
+        message.sender = senderVal.toString();
+        message.content = textVal.toString();
+        message.timestamp = QDateTime::currentDateTime();
+        message.isMyMessage = (senderVal.toString() == m_userName);
+        message.messageType = 0;  // 文本消息
+
+        m_mainChatModel->addMessage(message);
+
+        //messageReceived(senderVal.toString(),textVal.toString());
     }
     else if(typeVal.toString().compare("newuser",Qt::CaseInsensitive)==0){
         const QJsonValue userNameVal =docObj.value("username");
@@ -497,5 +514,53 @@ void MainWindow::on_btnAddfriend_clicked()//添加好友
 
         QMessageBox::information(this, "已发送",QString("好友请求已发送给 %1").arg(targetUser));
     }
+}
+
+void MainWindow::setupMainChatView()
+{
+    QListView *messageListView = ui->messageListView;
+
+    if (!messageListView) {
+        qWarning() << "messageListView is null!";
+        return;
+    }
+
+    // 设置模型
+    messageListView->setModel(m_mainChatModel);
+
+    // 设置委托
+    MessageDelegate *delegate = new MessageDelegate(this);
+    messageListView->setItemDelegate(delegate);
+
+    // 设置视图属性
+    messageListView->setSelectionMode(QAbstractItemView::NoSelection);
+    messageListView->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+    messageListView->setSpacing(0);//项间距
+    messageListView->setWordWrap(true);
+    messageListView->setUniformItemSizes(false);
+    messageListView->setResizeMode(QListView::Adjust);
+
+    // 设置样式
+    messageListView->setStyleSheet(
+        "QListView {"
+        "  background-color: #f5f5f5;"
+        "  outline: none;"
+        "}"
+        "QListView::item {"
+        "  border: none;"
+        "  background-color: transparent;"
+        "}"
+        );
+
+    // 自动滚动到底部
+    connect(m_mainChatModel, &QAbstractItemModel::rowsInserted,this, [messageListView](const QModelIndex &parent, int first, int last) {
+                Q_UNUSED(parent)
+                Q_UNUSED(first)
+                Q_UNUSED(last)
+                messageListView->scrollToBottom();});
+
+    // 连接到数据变化信号
+    connect(m_mainChatModel, &MessageModel::dataChanged,this, [messageListView]() {
+        messageListView->viewport()->update();});
 }
 

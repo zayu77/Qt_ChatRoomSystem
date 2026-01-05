@@ -24,9 +24,7 @@ public:
     QString getTargetUser() const { return m_targetUser; }
 
     // 添加消息
-    void displayPrivateMessage(const QString &sender,
-                               const QString &message,
-                               const QString &timestamp = "");
+    void displayPrivateMessage(const QString &sender,const QString &message,const QString &timestamp = "");
 
 signals:
     void windowClosed(const QString &targetUser);

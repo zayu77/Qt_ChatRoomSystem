@@ -54,9 +54,12 @@ private slots:
 private:
     Ui::MainWindow *ui;
 
-    // 新增：管理私聊窗口
+    // 管理私聊窗口
     QMap<QString, PrivateChat*> m_privateChatWindows;
     ChatClient *m_chatClient;
     QString m_userName;
+
+    MessageModel *m_mainChatModel;  // 主聊天模型
+    void setupMainChatView();  // 设置主聊天视图
 };
 #endif // MAINWINDOW_H
