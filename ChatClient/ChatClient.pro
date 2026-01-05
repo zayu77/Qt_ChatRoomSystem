@@ -16,6 +16,8 @@ SOURCES += \
     main.cpp \
     mainwindow.cpp \
     masterview.cpp \
+    messagedelegate.cpp \
+    messagemodel.cpp \
     privatechat.cpp \
     registerview.cpp
 
@@ -26,6 +28,8 @@ HEADERS += \
     loginview.h \
     mainwindow.h \
     masterview.h \
+    messagedelegate.h \
+    messagemodel.h \
     privatechat.h \
     registerview.h
 

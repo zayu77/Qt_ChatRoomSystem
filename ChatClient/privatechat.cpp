@@ -1,8 +1,13 @@
 #include "privatechat.h"
 #include "ui_privatechat.h"
+#include "messagedelegate.h"
+#include "idatabase.h"
 #include <QDateTime>
 #include <QKeyEvent>
-#include <QTextBlock>
+#include <QScrollBar>
+#include <QListWidget>
+#include <QFile>
+#include <QUuid>
 
 PrivateChat::PrivateChat(const QString &targetUser,const QString &myUsername,ChatClient *chatClient,QWidget *parent)
     : QWidget(parent)
@@ -10,17 +15,72 @@ PrivateChat::PrivateChat(const QString &targetUser,const QString &myUsername,Cha
     , m_targetUser(targetUser)
     , m_myUsername(myUsername)
     , m_chatClient(chatClient)
+    , m_messageModel(new MessageModel(this))
 {
     ui->setupUi(this);
 
-    // 设置窗口标题
+    // 设置窗口属性
     setWindowTitle(QString("与 %1 的私聊").arg(targetUser));
-    ui->labelTitle->setText(QString(targetUser));//设置标题为对方用户名
-    setAttribute(Qt::WA_DeleteOnClose);//关闭后销毁窗口
+    ui->labelTitle->setText(QString(targetUser));
+    setAttribute(Qt::WA_DeleteOnClose);
 
-    // 显示欢迎消息
-    QString welcomeMsg = QString("你正在与 %1 进行私聊").arg(targetUser);
-    ui->Edit_communicate->append(QString("<div style='color: gray; font-style: italic;'>%1</div>").arg(welcomeMsg));
+    // 设置消息视图
+    setupMessageView();
+
+    // 加载聊天记录
+    //loadChatHistory();
+
+    // 连接信号
+    connect(ui->say_textEdit, &QTextEdit::textChanged, this, &PrivateChat::onInputTextChanged);
+
+    // 设置输入框快捷键
+    ui->say_textEdit->installEventFilter(this);
+
+    // 设置输入框提示
+    ui->say_textEdit->setPlaceholderText("输入消息...");
+
+    // 初始禁用发送按钮
+    ui->btnSay->setEnabled(false);
+
+    setStyleSheet(
+        "QLabel#labelTitle {"  // 标题标签样式
+        "  color: purple;"
+        "  padding: 10px;"
+        "  border-bottom: 1px solid #e0e0e0;"
+        "  font-size: 16px;"
+        "  font-weight: bold;"
+        "}"
+        "QTextEdit#say_textEdit {"
+        "  border: 1px solid #ddd;"
+        "  border-radius: 4px;"
+        "  padding: 8px;"
+        "  font-size: 13px;"
+        "  background-color: white;"
+        "}"
+        "QTextEdit#say_textEdit:focus {"
+        "  border: 1px solid #4d90fe;"
+        "}"
+        ""
+        "QPushButton#btnSay {"
+        "  background-color: #07c160;"
+        "  color: white;"
+        "  border: none;"
+        "  border-radius: 4px;"
+        "  padding: 8px 20px;"
+        "  font-size: 13px;"
+        "  font-weight: 500;"
+        "}"
+        "QPushButton#btnSay:hover {"
+        "  background-color: #06ad56;"
+        "}"
+        "QPushButton#btnSay:pressed {"
+        "  background-color: #059b4e;"
+        "}"
+        "QPushButton#btnSay:disabled {"
+        "  background-color: #cccccc;"
+        "  color: #666666;"
+        "}"
+        );
 }
 
 PrivateChat::~PrivateChat()
@@ -28,33 +88,72 @@ PrivateChat::~PrivateChat()
     delete ui;
 }
 
-void PrivateChat::displayPrivateMessage(const QString &sender, const QString &message, const QString &timestamp)//展示私聊信息
+void PrivateChat::setupMessageView()
 {
-    QString timeStr = timestamp.isEmpty() ?QDateTime::currentDateTime().toString("hh:mm:ss") :timestamp;
+    QListView *messageListView = ui->messageListView;
 
-    QString formattedMsg;
-    bool isFromMe = (sender == m_myUsername);
-
-    if (isFromMe) {
-        // 我发送的消息
-        formattedMsg = QString("<div style='text-align: right; margin: 5px;'>""<div style='display: inline-block; max-width: 70%%; ""background-color: #DCF8C6; "
-                               "border-radius: 10px; padding: 8px; ""text-align: left;'>""<div style='font-size: 11px; color: #888;'>%1</div>"
-                               "<div style='font-size: 14px;'>%2</div>""</div>""</div>").arg(timeStr).arg(message.toHtmlEscaped());
-    } else {
-        // 对方发送的消息
-        formattedMsg = QString("<div style='margin: 5px;'>""<div style='font-size: 12px; color: #666;'>%1</div>""<div style='display: inline-block; max-width: 70%%; "
-                               "background-color: white; ""border: 1px solid #e1e1e1; ""border-radius: 10px; padding: 8px;'>"
-                               "<div style='font-size: 14px;'>%2</div>""</div>""</div>").arg(timeStr).arg(message.toHtmlEscaped());
+    if (!messageListView) {
+        qWarning() << "messageListView is null!";
+        return;
     }
-    ui->Edit_communicate->append(formattedMsg);
+
+    // 设置模型
+    messageListView->setModel(m_messageModel);
+
+    // 设置委托
+    MessageDelegate *delegate = new MessageDelegate(this);
+    messageListView->setItemDelegate(delegate);
+
+    // 设置视图属性
+    messageListView->setSelectionMode(QAbstractItemView::NoSelection);
+    messageListView->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+    messageListView->setSpacing(0);//项间距
+    messageListView->setWordWrap(true);
+    messageListView->setUniformItemSizes(false);
+    messageListView->setResizeMode(QListView::Adjust);
+
+    // 设置样式
+    messageListView->setStyleSheet(
+        "QListView {"
+        "  background-color: #f5f5f5;"
+        "  border: none;"
+        "  outline: none;"
+        "}"
+        "QListView::item {"
+        "  border: none;"
+        "  background-color: transparent;"
+        "}"
+    );
 
     // 自动滚动到底部
-    QTextCursor cursor = ui->Edit_communicate->textCursor();
-    cursor.movePosition(QTextCursor::End);
-    ui->Edit_communicate->setTextCursor(cursor);
+    connect(m_messageModel, &QAbstractItemModel::rowsInserted,this, [messageListView](const QModelIndex &parent, int first, int last) {
+                Q_UNUSED(parent)
+                Q_UNUSED(first)
+                Q_UNUSED(last)
+                messageListView->scrollToBottom();});
+
+    // 连接到数据变化信号
+    connect(m_messageModel, &MessageModel::dataChanged,this, [messageListView]() {
+                messageListView->viewport()->update();});
 }
 
-void PrivateChat::sendPrivateMessage()//发送私聊消息
+void PrivateChat::displayPrivateMessage(const QString &sender,const QString &message,const QString &timestamp)
+{
+    // 创建消息对象
+    ChatMessage msg;
+    msg.id = QUuid::createUuid().toString();
+    msg.sender = sender;
+    msg.content = message;
+    msg.timestamp = timestamp.isEmpty() ?QDateTime::currentDateTime() :QDateTime::fromString(timestamp, "hh:mm:ss");
+    msg.isMyMessage = (sender == m_myUsername);
+    msg.isRead = true;  // 接收到时默认已读
+    msg.messageType = 0;  // 文本消息
+
+    // 添加到模型
+    m_messageModel->addMessage(msg);
+}
+
+void PrivateChat::sendPrivateMessage()
 {
     QString message = ui->say_textEdit->toPlainText().trimmed();
     if (message.isEmpty()) {
@@ -62,16 +161,80 @@ void PrivateChat::sendPrivateMessage()//发送私聊消息
     }
 
     if (m_chatClient) {
-        // 发送私聊消息
-        m_chatClient->sendPrivateMessage(m_targetUser, message);
+        // 生成消息ID
+        QString messageId = QUuid::createUuid().toString();
 
-        // 在本地显示
-        displayPrivateMessage(m_myUsername, message);
+        // 先在本地显示
+        ChatMessage localMsg;
+        localMsg.id = messageId;
+        localMsg.sender = m_myUsername;
+        localMsg.content = message;
+        localMsg.timestamp = QDateTime::currentDateTime();
+        localMsg.isMyMessage = true;
+        localMsg.isRead = false;  // 刚发送，还未被对方读取
+        localMsg.messageType = 0;
+
+        m_messageModel->addMessage(localMsg);
+
+        // 发送到服务器
+        m_chatClient->sendPrivateMessage(m_targetUser, message);
 
         // 清空输入框
         ui->say_textEdit->clear();
         ui->say_textEdit->setFocus();
+
+        // 禁用发送按钮
+        ui->btnSay->setEnabled(false);
     }
+}
+
+// void PrivateChat::loadChatHistory()
+// {
+//     QString conversationId = m_targetUser;
+//     QList<QJsonObject> history = IDataBase::getInstance().getChatHistory(conversationId, 50);
+
+//     // 反转列表，因为数据库中是倒序
+//     std::reverse(history.begin(), history.end());
+
+//     for (const QJsonObject &msg : history) {
+//         ChatMessage chatMsg;
+//         chatMsg.id = msg["id"].toString();
+//         chatMsg.sender = msg["sender"].toString();
+//         chatMsg.content = msg["content"].toString();
+//         chatMsg.timestamp = QDateTime::fromString(msg["timestamp"].toString(), "yyyy-MM-dd hh:mm:ss");
+//         chatMsg.isMyMessage = msg["isMyMessage"].toBool();
+//         chatMsg.isRead = msg["isRead"].toBool();
+//         chatMsg.messageType = msg["messageType"].toInt();
+//         chatMsg.filePath = msg["filePath"].toString();
+//         chatMsg.fileSize = msg["fileSize"].toInt();
+
+//         m_messageModel->addMessage(chatMsg);
+//     }
+
+//     qDebug() << "加载聊天记录：" << m_targetUser << "，数量：" << history.size();
+// }
+
+bool PrivateChat::eventFilter(QObject *obj, QEvent *event)
+{
+    if (obj == ui->say_textEdit && event->type() == QEvent::KeyPress) {
+        QKeyEvent *keyEvent = static_cast<QKeyEvent*>(event);
+
+        // Ctrl+Enter 发送
+        if (keyEvent->key() == Qt::Key_Return &&
+            (keyEvent->modifiers() & Qt::ControlModifier)) {
+            sendPrivateMessage();
+            return true;
+        }
+        // Shift+Enter 换行
+        else if (keyEvent->key() == Qt::Key_Return &&
+                 (keyEvent->modifiers() & Qt::ShiftModifier)) {
+            // 插入换行
+            ui->say_textEdit->insertPlainText("\n");
+            return true;
+        }
+    }
+
+    return QWidget::eventFilter(obj, event);
 }
 
 void PrivateChat::closeEvent(QCloseEvent *event)
@@ -80,8 +243,29 @@ void PrivateChat::closeEvent(QCloseEvent *event)
     event->accept();
 }
 
-void PrivateChat::on_btnSay_clicked()//发送消息
+void PrivateChat::keyPressEvent(QKeyEvent *event)
+{
+    // 按Esc键关闭窗口
+    if (event->key() == Qt::Key_Escape) {
+        close();
+        return;
+    }
+
+    QWidget::keyPressEvent(event);
+}
+
+void PrivateChat::on_btnSay_clicked()
 {
     sendPrivateMessage();
 }
 
+void PrivateChat::onSendButtonClicked()
+{
+    sendPrivateMessage();
+}
+
+void PrivateChat::onInputTextChanged()
+{
+    QString text = ui->say_textEdit->toPlainText().trimmed();
+    ui->btnSay->setEnabled(!text.isEmpty());
+}
