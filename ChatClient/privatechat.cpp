@@ -28,7 +28,7 @@ PrivateChat::PrivateChat(const QString &targetUser,const QString &myUsername,Cha
     setupMessageView();
 
     // 加载聊天记录
-    //loadChatHistory();
+    loadChatHistory();
 
     // 连接信号
     connect(ui->say_textEdit, &QTextEdit::textChanged, this, &PrivateChat::onInputTextChanged);
@@ -151,6 +151,23 @@ void PrivateChat::displayPrivateMessage(const QString &sender,const QString &mes
 
     // 添加到模型
     m_messageModel->addMessage(msg);
+
+    // 保存到数据库
+    QString conversationId = m_targetUser;  // 使用对方用户名作为会话ID
+
+    IDataBase::getInstance().saveChatMessage(
+        conversationId,
+        msg.id,
+        sender,
+        m_targetUser,
+        message,
+        0,  // messageType
+        "", // filePath
+        0,  // fileSize
+        msg.isMyMessage,
+        true,  // isRead
+        msg.timestamp
+        );
 }
 
 void PrivateChat::sendPrivateMessage()
@@ -176,6 +193,22 @@ void PrivateChat::sendPrivateMessage()
 
         m_messageModel->addMessage(localMsg);
 
+        // 保存到本地数据库
+        QString conversationId = m_targetUser;
+        IDataBase::getInstance().saveChatMessage(
+            conversationId,
+            messageId,
+            m_myUsername,
+            m_targetUser,
+            message,
+            0,  // messageType
+            "", // filePath
+            0,  // fileSize
+            true,  // isMyMessage
+            false, // isRead
+            localMsg.timestamp
+            );
+
         // 发送到服务器
         m_chatClient->sendPrivateMessage(m_targetUser, message);
 
@@ -188,31 +221,31 @@ void PrivateChat::sendPrivateMessage()
     }
 }
 
-// void PrivateChat::loadChatHistory()
-// {
-//     QString conversationId = m_targetUser;
-//     QList<QJsonObject> history = IDataBase::getInstance().getChatHistory(conversationId, 50);
+void PrivateChat::loadChatHistory()//加载聊天记录
+{
+    QString conversationId = m_targetUser;
+    QList<QJsonObject> history = IDataBase::getInstance().getChatHistory(conversationId, 50);
 
-//     // 反转列表，因为数据库中是倒序
-//     std::reverse(history.begin(), history.end());
+    // 反转列表，因为数据库中是倒序
+    std::reverse(history.begin(), history.end());
 
-//     for (const QJsonObject &msg : history) {
-//         ChatMessage chatMsg;
-//         chatMsg.id = msg["id"].toString();
-//         chatMsg.sender = msg["sender"].toString();
-//         chatMsg.content = msg["content"].toString();
-//         chatMsg.timestamp = QDateTime::fromString(msg["timestamp"].toString(), "yyyy-MM-dd hh:mm:ss");
-//         chatMsg.isMyMessage = msg["isMyMessage"].toBool();
-//         chatMsg.isRead = msg["isRead"].toBool();
-//         chatMsg.messageType = msg["messageType"].toInt();
-//         chatMsg.filePath = msg["filePath"].toString();
-//         chatMsg.fileSize = msg["fileSize"].toInt();
+    for (const QJsonObject &msg : history) {
+        ChatMessage chatMsg;
+        chatMsg.id = msg["id"].toString();
+        chatMsg.sender = msg["sender"].toString();
+        chatMsg.content = msg["content"].toString();
+        chatMsg.timestamp = QDateTime::fromString(msg["timestamp"].toString(), "yyyy-MM-dd hh:mm:ss");
+        chatMsg.isMyMessage = msg["isMyMessage"].toBool();
+        chatMsg.isRead = msg["isRead"].toBool();
+        chatMsg.messageType = msg["messageType"].toInt();
+        chatMsg.filePath = msg["filePath"].toString();
+        chatMsg.fileSize = msg["fileSize"].toInt();
 
-//         m_messageModel->addMessage(chatMsg);
-//     }
+        m_messageModel->addMessage(chatMsg);
+    }
 
-//     qDebug() << "加载聊天记录：" << m_targetUser << "，数量：" << history.size();
-// }
+    qDebug() << "加载聊天记录：" << m_targetUser << "，数量：" << history.size();
+}
 
 bool PrivateChat::eventFilter(QObject *obj, QEvent *event)
 {
@@ -243,23 +276,7 @@ void PrivateChat::closeEvent(QCloseEvent *event)
     event->accept();
 }
 
-void PrivateChat::keyPressEvent(QKeyEvent *event)
-{
-    // 按Esc键关闭窗口
-    if (event->key() == Qt::Key_Escape) {
-        close();
-        return;
-    }
-
-    QWidget::keyPressEvent(event);
-}
-
 void PrivateChat::on_btnSay_clicked()
-{
-    sendPrivateMessage();
-}
-
-void PrivateChat::onSendButtonClicked()
 {
     sendPrivateMessage();
 }

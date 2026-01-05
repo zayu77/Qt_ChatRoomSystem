@@ -168,6 +168,86 @@ int IDataBase::getUserIdByUsername(const QString &username)//根据用户名获�
     return -1;  // 用户不存在
 }
 
+//与模型配套的保存聊天记录
+bool IDataBase::saveChatMessage(const QString &conversationId, const QString &messageId, const QString &sender, const QString &receiver, const QString &content, int messageType, const QString &filePath, qint64 fileSize, bool isMyMessage, bool isRead, const QDateTime &timestamp)
+{
+    QSqlQuery query;
+    query.prepare(
+        "INSERT INTO chat_history ("
+        "  conversation_id, message_id, sender_username, receiver_username, "
+        "  content, message_type, file_path, file_size, "
+        "  is_my_message, is_read, timestamp"
+        ") VALUES ("
+        "  :CONV_ID, :MSG_ID, :SENDER, :RECEIVER, "
+        "  :CONTENT, :MSG_TYPE, :FILE_PATH, :FILE_SIZE, "
+        "  :IS_MY_MSG, :IS_READ, :TIMESTAMP"
+        ")"
+        );
+
+    query.bindValue(":CONV_ID", conversationId);
+    query.bindValue(":MSG_ID", messageId);
+    query.bindValue(":SENDER", sender);
+    query.bindValue(":RECEIVER", receiver);
+    query.bindValue(":CONTENT", content);
+    query.bindValue(":MSG_TYPE", messageType);
+    query.bindValue(":FILE_PATH", filePath);
+    query.bindValue(":FILE_SIZE", fileSize);
+    query.bindValue(":IS_MY_MSG", isMyMessage ? 1 : 0);
+    query.bindValue(":IS_READ", isRead ? 1 : 0);
+    query.bindValue(":TIMESTAMP", timestamp.isValid() ?
+                                      timestamp : QDateTime::currentDateTime());
+
+    bool success = query.exec();
+    if (success) {
+        qDebug() << "保存聊天记录:" << conversationId
+                 << "来自" << sender << "->" << receiver;
+    } else {
+        qDebug() << "保存聊天记录失败:" << query.lastError();
+    }
+
+    return success;
+}
+
+QList<QJsonObject> IDataBase::getChatHistory(const QString &conversationId, int limit, int offset)
+{
+    QList<QJsonObject> messages;
+
+    QSqlQuery query;
+    query.prepare(
+        "SELECT * FROM chat_history "
+        "WHERE conversation_id = :CONV_ID "
+        "ORDER BY timestamp DESC "
+        "LIMIT :LIMIT OFFSET :OFFSET"
+        );
+    query.bindValue(":CONV_ID", conversationId);
+    query.bindValue(":LIMIT", limit);
+    query.bindValue(":OFFSET", offset);
+
+    if (!query.exec()) {
+        qDebug() << "获取聊天记录失败:" << query.lastError();
+        return messages;
+    }
+
+    while (query.next()) {
+        QJsonObject message;
+        message["id"] = query.value("message_id").toString();
+        message["sender"] = query.value("sender_username").toString();
+        message["receiver"] = query.value("receiver_username").toString();
+        message["content"] = query.value("content").toString();
+        message["messageType"] = query.value("message_type").toInt();
+        message["filePath"] = query.value("file_path").toString();
+        message["fileSize"] = query.value("file_size").toLongLong();
+        message["isMyMessage"] = query.value("is_my_message").toBool();
+        message["isRead"] = query.value("is_read").toBool();
+        message["timestamp"] = query.value("timestamp").toDateTime().toString("yyyy-MM-dd hh:mm:ss");
+
+        messages.append(message);
+    }
+
+    qDebug() << "获取聊天记录:" << conversationId << "数量:" << messages.size();
+    return messages;
+}
+
 IDataBase::IDataBase(QObject *parent) : QObject{parent}
 {
     initDatabase();

@@ -22,9 +22,6 @@ public:
 
     // 新增好友相关方法
     bool addFriendRelationship(int userId, int friendId, int groupId = 1, const QString &nickname = "");
-    //bool removeFriendRelationship(int userId, int friendId);
-    //bool updateFriendGroup(int userId, int friendId, int newGroupId);
-    //bool updateFriendNickname(int userId, int friendId, const QString &nickname);
 
     // 获取好友列表
     QJsonArray getFriendList(int userId);
@@ -32,8 +29,20 @@ public:
     // 获取用户ID
     int getUserIdByUsername(const QString &username);
 
-    // 更新用户状态
-    //bool updateUserStatus(const QString &username, int status);
+    // 聊天记录相关方法
+    bool saveChatMessage(const QString &conversationId,
+                         const QString &messageId,
+                         const QString &sender,
+                         const QString &receiver,
+                         const QString &content,
+                         int messageType = 0,
+                         const QString &filePath = "",
+                         qint64 fileSize = 0,
+                         bool isMyMessage = false,
+                         bool isRead = false,
+                         const QDateTime &timestamp = QDateTime());
+
+    QList<QJsonObject> getChatHistory(const QString &conversationId,int limit = 100,int offset = 0);
 
 private:
     explicit IDataBase(QObject *parent = nullptr);

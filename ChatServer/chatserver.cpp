@@ -312,6 +312,16 @@ void ChatServer::jsonReceived(ServerWorker *sender, const QJsonObject &docObj)
             sendFriendList(sender, username);
         }
     }
+    else  if (typeVal.toString().compare("heartbeat", Qt::CaseInsensitive) == 0) { // 处理心跳
+        qDebug() << "Heartbeat received from:" << sender->userName();
+
+        // 简单回复
+        QJsonObject response;
+        response["type"] = "heartbeat_response";
+        response["timestamp"] = QDateTime::currentDateTime().toString();
+        sender->sendJson(response);
+        return;
+    }
 }
 
 void ChatServer::userDisconnected(ServerWorker *sender)

@@ -37,7 +37,6 @@ private slots:
 
 protected:
     void closeEvent(QCloseEvent *event) override;
-    void keyPressEvent(QKeyEvent *event) override;
 
 private:
     Ui::PrivateChat *ui;
@@ -48,14 +47,11 @@ private:
 
     void setupMessageView();    // 设置消息视图
     void sendPrivateMessage();  // 发送私聊消息
-    //void loadChatHistory();     // 加载聊天记录
+    void loadChatHistory();     // 加载聊天记录
 
     // 输入处理
     bool eventFilter(QObject *obj, QEvent *event) override;
 
-private slots:
-    void onSendButtonClicked(); // 发送按钮点击
-    //void scrollToBottom();      // 滚动到底部
 };
 
 #endif // PRIVATECHAT_H

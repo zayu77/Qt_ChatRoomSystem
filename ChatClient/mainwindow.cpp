@@ -12,10 +12,11 @@ MainWindow::MainWindow(const QString &username,QWidget *parent)
 
     m_userName=username;//保存好用户名
     m_chatClient = new ChatClient(this);//初始化一个客户端
-    m_chatClient->connectToServer(QHostAddress("127.0.0.1"),1967);//我已经登录进来了直接连上就好了
 
     connect(m_chatClient,&ChatClient::connected,this,&MainWindow::connectedToServer);
     connect(m_chatClient,&ChatClient::jsonReceived,this,&MainWindow::jsonReceived);
+
+    m_chatClient->connectToServer(QHostAddress("127.0.0.1"),1967);//我已经登录进来了直接连上就好了
     // 连接用户列表双击信号
     connect(ui->listWidget_users, &QListWidget::itemDoubleClicked,this, &MainWindow::on_listWidget_users_itemDoubleClicked);
 }
@@ -134,6 +135,10 @@ void MainWindow::jsonReceived(const QJsonObject &docObj)
     else if(typeVal.toString().compare("friend_status", Qt::CaseInsensitive) == 0) {
         // 处理好友状态更新
         handleFriendStatus(docObj);
+    }
+    else if(typeVal.toString().compare("heartbeat_response", Qt::CaseInsensitive) == 0){
+        qDebug() << "心跳正常";
+        return;  // 直接返回，不干扰其他处理
     }
 }
 
