@@ -22,6 +22,11 @@ protected:
     void notifyFriendsStatusChange(const QString &username, int status);
     ServerWorker* findWorkerByUsername(const QString &username);
 
+    //多线程
+    void onConnectionReady(qintptr socketDescriptor);
+    void onConnectionFailed(qintptr socketDescriptor, const QString &error);
+    void setupWorkerConnections(ServerWorker *worker);
+
 private:
     void sendPrivateMessage(const QJsonObject &message, ServerWorker *sender);
     QMap<QString, QMap<QString, QJsonObject>> m_pendingRequests;  // 待处理的好友请求

@@ -11,6 +11,7 @@ public:
     explicit ServerWorker(QObject *parent = nullptr);
     virtual bool setSocketDescriptor(qintptr socketDescriptor);
 
+    QTcpSocket *m_serverSocket;
     QString userName();
     void setUserName(QString user);
 
@@ -20,7 +21,6 @@ signals:
     void disconnectedFromClient();
 
 private:
-    QTcpSocket *m_serverSocket;
     QString m_userName;
 
 public slots:

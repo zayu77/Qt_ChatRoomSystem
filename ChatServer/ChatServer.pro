@@ -10,6 +10,7 @@ CONFIG += c++17
 
 SOURCES += \
     chatserver.cpp \
+    connectiontask.cpp \
     idatabase.cpp \
     main.cpp \
     mainwindow.cpp \
@@ -17,6 +18,7 @@ SOURCES += \
 
 HEADERS += \
     chatserver.h \
+    connectiontask.h \
     idatabase.h \
     mainwindow.h \
     serverworker.h

@@ -2,11 +2,17 @@
 #include <QJsonValue>
 #include <QJsonObject>
 #include <QJsonArray>
+#include "connectiontask.h"
 
 ChatServer::ChatServer(QObject *parent):
     QTcpServer(parent)
 {
+    // 配置线程池
+    // QThreadPool *pool = QThreadPool::globalInstance();
+    // pool->setMaxThreadCount(20);  // 最大20个线程
+    // pool->setExpiryTimeout(30000);  // 线程空闲30秒后回收
 
+    // qDebug() << "ChatServer created, thread pool size:" << pool->maxThreadCount();
 }
 
 void ChatServer::incomingConnection(qintptr socketDescriptor)//这个有新客户端连接时会自动调用
@@ -21,6 +27,21 @@ void ChatServer::incomingConnection(qintptr socketDescriptor)//这个有新客�
     connect(worker,&ServerWorker::disconnectedFromClient,this,std::bind(&ChatServer::userDisconnected,this,worker));
     m_clients.append(worker);//成功了就添加进来
     emit logMessage("新的用户连接上了");
+
+    // qDebug() << "New incoming connection, socket:" << socketDescriptor;
+    // qDebug() << "Server thread:" << QThread::currentThread();
+
+    // // 使用线程池验证socket
+    // ConnectionTask *task = new ConnectionTask(socketDescriptor, this);
+
+    // // 连接信号
+    // connect(task, &ConnectionTask::connectionReady,this, &ChatServer::onConnectionReady, Qt::QueuedConnection);
+    // connect(task, &ConnectionTask::connectionFailed,this, &ChatServer::onConnectionFailed, Qt::QueuedConnection);
+
+    // // 在线程池中执行验证
+    // QThreadPool::globalInstance()->start(task);
+
+    // emit logMessage(QString("新连接已分配给线程池处理 (socket: %1)").arg(socketDescriptor));
 }
 
 void ChatServer::broadcast(const QJsonObject &message, ServerWorker *exclude)//给所有连接的客户端广播消息
@@ -84,6 +105,54 @@ ServerWorker *ChatServer::findWorkerByUsername(const QString &username)//根据�
         }
     }
     return nullptr;  // 没找到
+}
+
+void ChatServer::onConnectionReady(qintptr socketDescriptor)
+{
+    qDebug() << "[ChatServer] Creating worker for socket:" << socketDescriptor;
+
+    // 在主线程中创建worker
+    ServerWorker *worker = new ServerWorker(this);
+
+    if (!worker->setSocketDescriptor(socketDescriptor)) {
+        qDebug() << "[ChatServer] Failed to set socket descriptor";
+        emit logMessage("创建客户端处理器失败");
+        worker->deleteLater();
+        return;
+    }
+
+    // 保存到客户端列表
+    m_clients.append(worker);
+
+    // 设置信号连接
+    setupWorkerConnections(worker);
+
+    qDebug() << "[ChatServer] Worker created successfully";
+    emit logMessage("客户端连接已建立");
+}
+
+void ChatServer::onConnectionFailed(qintptr socketDescriptor, const QString &error)
+{
+    qDebug() << "[ChatServer] Socket failed:" << socketDescriptor << "error:" << error;
+    emit logMessage(QString("连接验证失败: %1").arg(error));
+}
+
+void ChatServer::setupWorkerConnections(ServerWorker *worker)
+{
+    qDebug() << "[ChatServer] Setting up worker connections";
+    qDebug() << "[ChatServer] Worker thread:" << worker->thread();
+
+    // 消息接收
+    connect(worker, &ServerWorker::jsonReceived,this, &ChatServer::jsonReceived, Qt::QueuedConnection);
+
+    // 客户端断开连接
+    connect(worker, &ServerWorker::disconnectedFromClient,
+            this, [this, worker]() {
+                userDisconnected(worker);
+            }, Qt::QueuedConnection);
+
+    // 日志消息
+    connect(worker, &ServerWorker::logMessage,this, &ChatServer::logMessage, Qt::QueuedConnection);
 }
 
 void ChatServer::sendPrivateMessage(const QJsonObject &message, ServerWorker *sender)

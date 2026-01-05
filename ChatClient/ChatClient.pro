@@ -11,7 +11,6 @@ CONFIG += c++17
 SOURCES += \
     addfrienddialog.cpp \
     chatclient.cpp \
-    connectionmanager.cpp \
     idatabase.cpp \
     loginview.cpp \
     main.cpp \
@@ -25,7 +24,6 @@ SOURCES += \
 HEADERS += \
     addfrienddialog.h \
     chatclient.h \
-    connectionmanager.h \
     idatabase.h \
     loginview.h \
     mainwindow.h \
