@@ -7,45 +7,66 @@
 ChatServer::ChatServer(QObject *parent):
     QTcpServer(parent)
 {
-    // 配置线程池
-    // QThreadPool *pool = QThreadPool::globalInstance();
-    // pool->setMaxThreadCount(20);  // 最大20个线程
-    // pool->setExpiryTimeout(30000);  // 线程空闲30秒后回收
 
-    // qDebug() << "ChatServer created, thread pool size:" << pool->maxThreadCount();
 }
 
 void ChatServer::incomingConnection(qintptr socketDescriptor)//这个有新客户端连接时会自动调用
 {
-    ServerWorker *worker= new ServerWorker(this);
-    if(!worker->setSocketDescriptor(socketDescriptor)){
-        worker->deleteLater();
-        return;
+    // ServerWorker *worker= new ServerWorker(this);
+    // if(!worker->setSocketDescriptor(socketDescriptor)){
+    //     worker->deleteLater();
+    //     return;
+    // }
+    // connect(worker,&ServerWorker::logMessage,this,&ChatServer::logMessage);//这个logMessage的传递由ServerWorker传到ChatServer再到mainwindow
+    // connect(worker,&ServerWorker::jsonReceived,this,&ChatServer::jsonReceived);//接收到ServerWorker发出的信号然后调用ChatServer的方法
+    // connect(worker,&ServerWorker::disconnectedFromClient,this,std::bind(&ChatServer::userDisconnected,this,worker));
+    // m_clients.append(worker);//成功了就添加进来
+    // emit logMessage("新的用户连接上了");
+
+    // 1. 创建线程
+    QThread *workerThread = new QThread(this);
+
+    // 2. 创建 Worker（注意：此时不给它指定父对象）
+    ServerWorker *worker = new ServerWorker();
+
+    // 3. 将 Worker 移动到子线程
+    worker->moveToThread(workerThread);
+
+    // 4. 连接线程信号
+    // 线程启动后，在子线程中初始化 Socket
+    connect(workerThread, &QThread::started, [worker, socketDescriptor]() {
+        if (!worker->setSocketDescriptor(socketDescriptor)) {
+            // 如果失败，Worker 应该发出信号通知删除
+            emit worker->disconnectedFromClient();
+        }
+    });
+
+    // 线程结束时，自动清理 Worker
+    connect(workerThread, &QThread::finished, worker, &QObject::deleteLater);
+    // Worker 被销毁时，让线程退出
+    connect(worker, &QObject::destroyed, workerThread, &QThread::quit);
+    // 线程退出后，销毁线程对象本身
+    connect(workerThread, &QThread::finished, workerThread, &QObject::deleteLater);
+
+    // 5. 设置业务逻辑信号连接（注意：这里必须用 QueuedConnection，或者默认 Auto 也会自动转为 Queued）
+    setupWorkerConnections(worker);
+
+
+    // 6. 管理列表（注意：多线程环境下访问 m_clients 需要加锁）
+    {
+        QMutexLocker locker(&m_mutex);
+        m_clients.append(worker);
     }
-    connect(worker,&ServerWorker::logMessage,this,&ChatServer::logMessage);//这个logMessage的传递由ServerWorker传到ChatServer再到mainwindow
-    connect(worker,&ServerWorker::jsonReceived,this,&ChatServer::jsonReceived);//接收到ServerWorker发出的信号然后调用ChatServer的方法
-    connect(worker,&ServerWorker::disconnectedFromClient,this,std::bind(&ChatServer::userDisconnected,this,worker));
-    m_clients.append(worker);//成功了就添加进来
-    emit logMessage("新的用户连接上了");
 
-    // qDebug() << "New incoming connection, socket:" << socketDescriptor;
-    // qDebug() << "Server thread:" << QThread::currentThread();
+    // 7. 开启线程
+    workerThread->start();
 
-    // // 使用线程池验证socket
-    // ConnectionTask *task = new ConnectionTask(socketDescriptor, this);
-
-    // // 连接信号
-    // connect(task, &ConnectionTask::connectionReady,this, &ChatServer::onConnectionReady, Qt::QueuedConnection);
-    // connect(task, &ConnectionTask::connectionFailed,this, &ChatServer::onConnectionFailed, Qt::QueuedConnection);
-
-    // // 在线程池中执行验证
-    // QThreadPool::globalInstance()->start(task);
-
-    // emit logMessage(QString("新连接已分配给线程池处理 (socket: %1)").arg(socketDescriptor));
+    emit logMessage("新连接已分配到独立线程");
 }
 
 void ChatServer::broadcast(const QJsonObject &message, ServerWorker *exclude)//给所有连接的客户端广播消息
 {
+    QMutexLocker locker(&m_mutex); // 自动加锁解锁// 锁住列表，防止遍历时被其他线程修改
     for(ServerWorker *worker : m_clients){
         worker->sendJson(message);
     }
@@ -99,6 +120,7 @@ ServerWorker *ChatServer::findWorkerByUsername(const QString &username)//根据�
     if (username.isEmpty()) {
         return nullptr;
     }
+    QMutexLocker locker(&m_mutex);
     for (ServerWorker *worker : m_clients) {
         if (worker->userName() == username) {
             return worker;
@@ -395,7 +417,11 @@ void ChatServer::jsonReceived(ServerWorker *sender, const QJsonObject &docObj)
 
 void ChatServer::userDisconnected(ServerWorker *sender)
 {
-    m_clients.removeAll(sender);//移除数组中的这个客户端
+    // 从列表中移除（加锁）
+    {
+        QMutexLocker locker(&m_mutex);
+        m_clients.removeAll(sender);
+    }
     const QString userName = sender->userName();
     if(!userName.isEmpty()){
         QJsonObject disconnectedMessage;
@@ -405,5 +431,7 @@ void ChatServer::userDisconnected(ServerWorker *sender)
         notifyFriendsStatusChange(userName, 0);//告诉好友们我下线了
         emit logMessage(userName + "disconnected");
     }
-    sender->deleteLater();//真正删除掉
+    //sender->deleteLater();//真正删除掉
+    // 这里不需要手动 delete worker，因为在 incomingConnection 里的
+    // connect(workerThread, &QThread::finished, worker, &QObject::deleteLater) 已经负责了清理 sender->deleteLater();
 }

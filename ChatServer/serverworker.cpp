@@ -2,17 +2,26 @@
 #include <QDataStream>
 #include <QJsonObject>
 #include <QJsonDocument>
+#include <QThread>
 
 //处理客户端请求
-ServerWorker::ServerWorker(QObject *parent): QObject{ parent }
+ServerWorker::ServerWorker(QObject *parent): QObject{ nullptr }
 {
-    m_serverSocket = new QTcpSocket(this);
-    connect(m_serverSocket,&QTcpSocket::readyRead,this,&ServerWorker::onReadyRead);
-    connect(m_serverSocket,&QTcpSocket::disconnected,this,&ServerWorker::disconnectedFromClient);
+    m_serverSocket = nullptr;
+    // m_serverSocket = new QTcpSocket(this);
+    // connect(m_serverSocket,&QTcpSocket::readyRead,this,&ServerWorker::onReadyRead);
+    // connect(m_serverSocket,&QTcpSocket::disconnected,this,&ServerWorker::disconnectedFromClient);
 }
 
 bool ServerWorker::setSocketDescriptor(qintptr socketDescriptor)//设置客户端的 socket
 {
+    //return m_serverSocket->setSocketDescriptor(socketDescriptor);
+
+    if (!m_serverSocket) {
+        m_serverSocket = new QTcpSocket(this); // 此时创建，socket 将属于子线程
+        connect(m_serverSocket, &QTcpSocket::readyRead, this, &ServerWorker::onReadyRead);
+        connect(m_serverSocket, &QTcpSocket::disconnected, this, &ServerWorker::disconnectedFromClient);
+    }
     return m_serverSocket->setSocketDescriptor(socketDescriptor);
 }
 
@@ -66,9 +75,30 @@ void ServerWorker::sendMessage(const QString &text, const QString &type)//向客
 
 void ServerWorker::sendJson(const QJsonObject &json)//可发送任意格式JSON//将JSON对象序列化为字节流，并通过TCP socket发送给客户端。
 {
-    const QByteArray jsonData=QJsonDocument(json).toJson(QJsonDocument::Compact); //转换为紧凑格式的 JSON 字符串字节数组
-    emit logMessage(QLatin1String("Sending to ")+userName()+QLatin1String(" - ")+QString::fromUtf8(jsonData));
+    // const QByteArray jsonData=QJsonDocument(json).toJson(QJsonDocument::Compact); //转换为紧凑格式的 JSON 字符串字节数组
+    // emit logMessage(QLatin1String("Sending to ")+userName()+QLatin1String(" - ")+QString::fromUtf8(jsonData));
+    // QDataStream socketStream(m_serverSocket);
+    // socketStream.setVersion(QDataStream::Qt_6_5);
+    // socketStream << jsonData;
+
+    // 关键：如果调用者不在 Worker 所在的线程（比如 ChatServer 在主线程广播）
+    // 我们需要使用元对象系统确保 sendJson 在 Worker 的线程安全执行
+    if (QThread::currentThread() != this->thread()) {
+        QMetaObject::invokeMethod(this, [this, json] {
+            this->sendJson(json);
+        }, Qt::QueuedConnection);
+        return;
+    }
+
+    if (!m_serverSocket || m_serverSocket->state() != QAbstractSocket::ConnectedState)
+        return;
+
+    const QByteArray jsonData = QJsonDocument(json).toJson(QJsonDocument::Compact);
+
     QDataStream socketStream(m_serverSocket);
     socketStream.setVersion(QDataStream::Qt_6_5);
     socketStream << jsonData;
+
+    // 立即刷新缓冲区确保发出
+    m_serverSocket->flush();
 }

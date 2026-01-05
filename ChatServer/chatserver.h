@@ -5,6 +5,8 @@
 #include <QTcpServer>
 #include "serverworker.h"
 #include "idatabase.h"
+#include <QMutex>
+
 
 class ChatServer : public QTcpServer
 {
@@ -15,6 +17,7 @@ public:
 protected:
     void incomingConnection(qintptr socketDescriptor) override;
     QVector<ServerWorker*>m_clients;
+    QMutex m_mutex;
 
     void broadcast(const QJsonObject &message,ServerWorker *exclude);
     void sendFriendList(ServerWorker *client, const QString &username);//发送好友列表
